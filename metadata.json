@@ -1,0 +1,8 @@
+{
+  "name": "Internal Revenue Dashboard",
+  "description": "An internal management dashboard for monitoring revenue performance across multiple companies and business units, connected to Google Sheets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
