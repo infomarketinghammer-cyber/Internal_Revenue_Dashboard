@@ -59,7 +59,7 @@ export default function ExpensesSection({ data }: ExpensesSectionProps) {
   };
 
   return (
-    <div id="expense-table-section" className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <div id="expense-table-section" className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
       {/* Table Section */}
       <div className="lg:col-span-6 bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between">
         <div>
@@ -73,29 +73,41 @@ export default function ExpensesSection({ data }: ExpensesSectionProps) {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-amber-300/80 border-b border-amber-400/60 text-slate-900 font-black text-[11px]">
-                  <th className="py-2.5 px-4 border-r border-amber-400/40">Category</th>
-                  <th className="py-2.5 px-4 text-right border-r border-amber-400/40">Amount</th>
-                  <th className="py-2.5 px-4 text-right">Share (%)</th>
+                <tr className="bg-amber-300/80 border-b border-amber-400/60 text-slate-900 font-black text-[11px] uppercase tracking-wider">
+                  <th className="py-3 px-4 border-r border-amber-400/40">Category</th>
+                  <th className="py-3 px-4 text-right border-r border-amber-400/40">Amount</th>
+                  <th className="py-3 px-4 text-right border-r border-amber-400/40">Share (%)</th>
+                  <th className="py-3 px-4 text-center">Visual Share</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {expenseItems.map((item, idx) => {
                   const color = getCategoryColor(item.category, idx);
                   return (
                     <tr key={item.category} className="hover:bg-slate-50 transition-colors text-slate-700">
-                      <td className="py-3 px-4 border-r border-slate-100 flex items-center gap-2.5 font-bold text-slate-900">
+                      <td className="py-3.5 px-4 border-r border-slate-100 flex items-center gap-2.5 font-bold text-slate-900">
                         <span
-                          className="w-3 h-3 rounded-sm inline-block shrink-0 shadow-xs"
+                          className="w-3 h-3 rounded-xs inline-block shrink-0 shadow-2xs"
                           style={{ backgroundColor: color }}
                         />
                         <span>{item.category}</span>
                       </td>
-                      <td className="py-3 px-4 text-right font-bold text-slate-900 border-r border-slate-100">
+                      <td className="py-3.5 px-4 text-right font-bold text-slate-900 border-r border-slate-100">
                         {formatExactINR(item.amount)}
                       </td>
-                      <td className="py-3 px-4 text-right font-black text-slate-800">
+                      <td className="py-3.5 px-4 text-right font-black text-slate-800 border-r border-slate-100">
                         {item.percentage.toFixed(1)}%
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${Math.min(item.percentage, 100)}%`,
+                              backgroundColor: color,
+                            }}
+                          />
+                        </div>
                       </td>
                     </tr>
                   );
@@ -103,14 +115,17 @@ export default function ExpensesSection({ data }: ExpensesSectionProps) {
               </tbody>
               <tfoot>
                 <tr className="bg-amber-300 font-black text-slate-950 border-t-2 border-amber-400">
-                  <td className="py-3 px-4 border-r border-amber-400/50">
+                  <td className="py-3.5 px-4 border-r border-amber-400/50">
                     Total Expenses
                   </td>
-                  <td className="py-3 px-4 text-right border-r border-amber-400/50">
+                  <td className="py-3.5 px-4 text-right border-r border-amber-400/50">
                     {formatExactINR(totalExpenses)}
                   </td>
-                  <td className="py-3 px-4 text-right">
+                  <td className="py-3.5 px-4 text-right border-r border-amber-400/50">
                     100.0%
+                  </td>
+                  <td className="py-3.5 px-4 text-center text-[10px] font-bold text-slate-800 uppercase tracking-wider">
+                    Full Allocation
                   </td>
                 </tr>
               </tfoot>
@@ -122,20 +137,20 @@ export default function ExpensesSection({ data }: ExpensesSectionProps) {
       {/* Donut Chart Breakdown Section */}
       <div className="lg:col-span-6 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
         <div>
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex justify-between items-center mb-1">
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
               Expense Distribution Breakdown
             </h3>
           </div>
-          <div className="w-full h-72 relative flex items-center justify-center">
+          <div className="w-full h-60 relative flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={expenseItems}
                   cx="50%"
                   cy="46%"
-                  innerRadius={65}
-                  outerRadius={95}
+                  innerRadius={60}
+                  outerRadius={88}
                   paddingAngle={4}
                   dataKey="amount"
                   nameKey="category"
@@ -152,7 +167,7 @@ export default function ExpensesSection({ data }: ExpensesSectionProps) {
                 <Tooltip content={<CustomTooltip />} />
                 <Legend
                   verticalAlign="bottom"
-                  height={36}
+                  height={32}
                   iconType="circle"
                   iconSize={8}
                   formatter={(value) => <span className="text-xs font-bold text-slate-700 mx-1">{value}</span>}
@@ -160,7 +175,7 @@ export default function ExpensesSection({ data }: ExpensesSectionProps) {
               </PieChart>
             </ResponsiveContainer>
             {/* Center Summary Label */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-7">
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-6">
               <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Total Expense</span>
               <span className="text-sm font-black text-slate-900 mt-0.5">{formatExactINR(totalExpenses)}</span>
             </div>
