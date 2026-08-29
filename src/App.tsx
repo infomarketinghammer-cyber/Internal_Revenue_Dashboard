@@ -114,8 +114,6 @@ export default function App() {
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [isPOModalOpen, setIsPOModalOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const [isRetrying, setIsRetrying] = useState(false);
 
   // Active state derived from sheet or fallbacks
   const [isLive, setIsLive] = useState(false);
@@ -178,7 +176,6 @@ export default function App() {
 
   const fetchSpreadsheetData = async (accessToken?: string, attempt: number = 0) => {
     setIsLoading(true);
-    setFetchError(null);
     try {
       const headers: Record<string, string> = {};
       if (accessToken) {
@@ -195,7 +192,6 @@ export default function App() {
       const rawData = await response.json();
       setRawSheetData(rawData);
       setIsLive(true);
-      setFetchError(null);
       setLastUpdated(new Date().toLocaleTimeString());
 
       const parsed = parseRawSpreadsheet(rawData);
@@ -204,28 +200,13 @@ export default function App() {
         setPOs(fetchedPOs);
       }
     } catch (err: any) {
-      console.error("Fetch data failed:", err);
-      const errMsg = err.message || "Unable to retrieve Google Sheets details.";
-      const isNetworkError = errMsg.toLowerCase().includes("failed to fetch") || 
-                             errMsg.toLowerCase().includes("networkerror") ||
-                             errMsg.toLowerCase().includes("status 500") ||
-                             errMsg.toLowerCase().includes("load google sheet data");
-
-      if (isNetworkError && attempt < 3) {
-        setIsRetrying(true);
-        const nextAttempt = attempt + 1;
-        const delay = Math.pow(2, attempt) * 1500; // Exponential: 1.5s, 3s, 6s
-        setFetchError(`Temporary network blip. Re-connecting to servers in ${delay / 1000}s... (Attempt ${nextAttempt}/3)`);
+      console.warn("Silent background fetch update notice:", err?.message || err);
+      // Silent exponential backoff retry in background without intrusive UI error banners
+      if (attempt < 3) {
+        const delay = Math.pow(2, attempt) * 2000;
         setTimeout(() => {
-          fetchSpreadsheetData(accessToken, nextAttempt);
+          fetchSpreadsheetData(accessToken, attempt + 1);
         }, delay);
-      } else {
-        setIsRetrying(false);
-        if (errMsg.toLowerCase().includes("unauthorized") || errMsg.toLowerCase().includes("google api error") || errMsg.toLowerCase().includes("consent")) {
-          setErrorMsg(errMsg);
-        } else {
-          setFetchError(errMsg);
-        }
       }
     } finally {
       setIsLoading(false);
@@ -362,27 +343,6 @@ export default function App() {
             Internal Revenue Dashboard
           </h1>
         </div>
-        {/* Network Error & Auto Retry Toast Banner */}
-        {fetchError && (
-          <div className="bg-rose-50 border border-rose-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-rose-100 text-rose-700 p-2 rounded-xl shrink-0">
-                <AlertTriangle className="w-5 h-5 animate-bounce" />
-              </div>
-              <div className="text-center sm:text-left">
-                <h4 className="text-sm font-bold text-slate-800">Connection Blip Detected</h4>
-                <p className="text-xs text-slate-600 mt-0.5">{fetchError}</p>
-              </div>
-            </div>
-            <button
-              id="btn-retry-fetch"
-              onClick={() => fetchSpreadsheetData(token || undefined)}
-              className="py-1.5 px-4 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm cursor-pointer transition-all shrink-0"
-            >
-              Retry Connection
-            </button>
-          </div>
-        )}
 
         {/* Banner if in Demo Mode */}
         {!isLive && (
