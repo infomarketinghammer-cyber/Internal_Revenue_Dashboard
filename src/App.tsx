@@ -116,7 +116,7 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Active state derived from sheet or fallbacks
-  const [isLive, setIsLive] = useState(false);
+  const [isLive, setIsLive] = useState(true);
   const [rawSheetData, setRawSheetData] = useState<any>(null);
   const [pos, setPOs] = useState<PO[]>(FALLBACK_POS);
 
@@ -343,67 +343,6 @@ export default function App() {
             Internal Revenue Dashboard
           </h1>
         </div>
-
-        {/* Banner if in Demo Mode */}
-        {!isLive && (
-          <div className="bg-blue-50 border border-blue-100/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-blue-100/80 text-blue-700 p-2 rounded-xl shrink-0">
-                <HelpCircle className="w-5 h-5" />
-              </div>
-              <div className="text-center sm:text-left">
-                <h4 className="text-sm font-bold text-slate-800">Viewing Demonstration Dashboard</h4>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  To view live records, click "Connect Sheets" and authorize access to your Google Workspace sheets.
-                </p>
-              </div>
-            </div>
-            <button
-              id="btn-demo-connect"
-              onClick={handleLogin}
-              className="py-1.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm cursor-pointer"
-            >
-              Sign In Now
-            </button>
-          </div>
-        )}
-
-        {/* Error message / Google OAuth verification guide if login failed */}
-        {errorMsg && (
-          <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-5 space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="bg-amber-100 text-amber-800 p-2 rounded-xl shrink-0 mt-0.5">
-                <HelpCircle className="w-5 h-5" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-sm font-bold text-slate-800">Google OAuth Authorization Troubleshooting</h4>
-                <p className="text-xs text-slate-600 mt-1">
-                  Google blocks logins with <code className="bg-amber-100/60 px-1 py-0.5 rounded text-amber-900">Access blocked: has not completed the Google verification process</code> when the OAuth app is in <strong className="font-bold text-slate-800">Testing mode</strong>.
-                </p>
-              </div>
-              <button 
-                onClick={() => setErrorMsg(null)}
-                className="text-slate-400 hover:text-slate-600 text-xs font-bold px-2 py-1 rounded hover:bg-amber-100 cursor-pointer"
-              >
-                Dismiss
-              </button>
-            </div>
-            
-            <div className="text-xs text-slate-500 pl-11 space-y-2">
-              <p className="font-semibold text-slate-700">To enable administrative access for your Google account, follow these exact steps:</p>
-              <ol className="list-decimal list-inside space-y-1 pl-1">
-                <li>Open the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-semibold">Google Cloud Console</a>.</li>
-                <li>Ensure you have selected the project <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-slate-800">gen-lang-client-0899368323</code>.</li>
-                <li>Navigate to <strong className="text-slate-700">APIs & Services</strong> &gt; <strong className="text-slate-700">OAuth consent screen</strong> from the left sidebar.</li>
-                <li>Scroll down to the <strong className="text-slate-700">Test users</strong> section.</li>
-                <li>Click <strong className="text-slate-700">+ Add Users</strong>, enter your administrator Google account email (e.g. <code className="bg-slate-100 px-1 py-0.5 rounded">info.marketinghammer@gmail.com</code>), and click <strong className="text-slate-700">Save</strong>.</li>
-              </ol>
-              <p className="pt-1.5 text-[11px] text-amber-700 font-medium">
-                Note: The dashboard is fully operational and synchronized in real-time with the central Google Sheet via the secure server proxy. You do not need to sign in to view live records.
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Global Controls */}
         <div className="flex items-center justify-between">

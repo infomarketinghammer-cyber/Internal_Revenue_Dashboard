@@ -13,6 +13,10 @@ const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID || "1yxEUtw98KyfkFzMY1Y
 app.use(express.json());
 
 // API routes FIRST
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
 app.get("/api/sheets/metadata", async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
@@ -25,6 +29,7 @@ app.get("/api/sheets/metadata", async (req, res) => {
       headers: {
         Authorization: authHeader,
       },
+      signal: AbortSignal.timeout(8000),
     });
 
     if (!response.ok) {
@@ -57,6 +62,7 @@ app.get("/api/sheets/values", async (req, res) => {
       headers: {
         Authorization: authHeader,
       },
+      signal: AbortSignal.timeout(8000),
     });
 
     if (!response.ok) {
@@ -85,7 +91,10 @@ async function getLiveSpreadsheetData(): Promise<any> {
 
   console.log(`Fetching live spreadsheet from Google Sheets export URL for SPREADSHEET_ID: ${SPREADSHEET_ID}`);
   const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=xlsx`;
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    redirect: "follow",
+    signal: AbortSignal.timeout(10000),
+  });
   if (!response.ok) {
     throw new Error(`Failed to fetch spreadsheet from Google: ${response.statusText}`);
   }
@@ -117,56 +126,43 @@ async function getLiveSpreadsheetData(): Promise<any> {
 }
 
 app.get("/api/sheets/all", async (req, res) => {
-  // 1. If we have a Google Apps Script Web App URL, use it first!
-  // This bypasses any authorization issue or file download permissions entirely.
-  const appsScriptUrl = process.env.GOOGLE_APPS_SCRIPT_URL;
-  if (appsScriptUrl) {
-    try {
-      console.log(`Fetching live spreadsheet from Google Apps Script: ${appsScriptUrl}`);
-      const response = await fetch(appsScriptUrl);
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Successfully fetched and served Google Sheets data via Apps Script");
-        return res.json(data);
-      }
-      console.warn(`Google Apps Script web app returned status ${response.status}. Falling back...`);
-    } catch (scriptErr: any) {
-      console.error("Error fetching from Google Apps Script:", scriptErr.message);
-    }
+  // 1. Primary & fast method: Direct live spreadsheet parsing via server
+  try {
+    const data = await getLiveSpreadsheetData();
+    return res.json(data);
+  } catch (xlsxErr: any) {
+    console.warn("Direct XLSX download failed, checking alternatives:", xlsxErr.message);
   }
 
+  // 2. Secondary fallback: If user passed OAuth token, query Google Sheets REST API
   const authHeader = req.headers.authorization;
-  
-  // 2. If we have an Authorization header, try the Google Sheets REST API next
   if (authHeader) {
     try {
-      console.log("Authorization header present. Querying Google REST API...");
+      console.log("Querying Google REST API with auth token...");
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?includeGridData=true`;
       const response = await fetch(url, {
         headers: {
           Authorization: authHeader,
         },
+        signal: AbortSignal.timeout(8000),
       });
 
       if (response.ok) {
         const data = await response.json();
         return res.json(data);
       }
-      
-      console.warn(`Google REST API returned status ${response.status}. Falling back to public XLSX download...`);
-    } catch (apiError) {
-      console.error("Google REST API failed, falling back to public XLSX download:", apiError);
+    } catch (apiError: any) {
+      console.error("Google REST API failed:", apiError.message);
     }
   }
 
-  // 3. Fallback or Default: Public server-side XLSX download (no authorization required!)
-  try {
-    const data = await getLiveSpreadsheetData();
-    res.json(data);
-  } catch (error: any) {
-    console.error("Error fetching live sheet via server-side XLSX:", error);
-    res.status(500).json({ error: `Server error fetching live sheet: ${error.message}` });
+  // 3. If cache exists from prior fetch, serve it even if stale
+  if (cachedData) {
+    console.log("Serving stale cached spreadsheet data as fallback");
+    return res.json(cachedData);
   }
+
+  res.status(500).json({ error: "Unable to retrieve Google Sheets data at this moment" });
 });
 
 // Vite middleware setup
